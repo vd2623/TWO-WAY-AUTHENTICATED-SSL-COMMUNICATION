@@ -1,0 +1,32 @@
+import socket
+import ssl
+
+SERVER_HOST = 'localhost'
+SERVER_PORT = 2354
+
+CERTFILE = 'server.crt'
+KEYFILE = 'server.key'
+
+def handle_client(connection):
+    with connection:
+        data = connection.recv(2374)
+        print(f"Received data from client: {data.decode()}")
+        connection.sendall(b"Hello from server!")
+
+def main():
+    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    context.load_cert_chain(certfile=CERTFILE, keyfile=KEYFILE)
+    
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+        server_socket.bind((SERVER_HOST, SERVER_PORT))
+        server_socket.listen(1)
+        print(f"Server listening on {SERVER_HOST}:{SERVER_PORT}...")
+
+        while True:
+            connection, address = server_socket.accept()
+            with context.wrap_socket(connection, server_side=True) as ssl_connection:
+                print(f"Connected to client: {address}")
+                handle_client(ssl_connection)
+
+if __name__ == "__main__":
+    main()
